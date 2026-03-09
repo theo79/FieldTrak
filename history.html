@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <title>FieldTrak — Ιστορικό</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0A66FF" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-bar no-print">
+    <div class="app-bar-inner">
+      <div class="brand">
+        <img src="fieldtrak1.png" alt="FieldTrak" onerror="this.onerror=null;this.src='/mnt/data/icon.png';">
+        <span>FieldTrak</span>
+      </div>
+      <nav class="app-nav">
+        <a href="index.html" data-i18n="nav.home">Αρχική</a>
+        <a href="work_order.html" data-i18n="nav.workorder">Εντολή Εργασίας</a>
+        <a href="station.html" data-i18n="nav.station">Έλεγχος Εγκαταστάσεων</a>
+        <a href="calendar.html" data-i18n="nav.calendar">Ημερολόγιο</a>
+        <a class="active" href="history.html" data-i18n="nav.history">Ιστορικό</a>
+      </nav>
+      <div class="lang-segment no-print" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="el" aria-pressed="true">EL</button>
+        <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+        <button type="button" class="lang-btn" data-lang="it" aria-pressed="false">IT</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title" data-i18n="history.title">Ιστορικό</h1>
+
+    <div class="card">
+      <div class="history-tabs">
+        <button type="button" class="btn active" id="tabWorkOrder" data-i18n="history.tabWorkOrder">Εντολές Εργασίας</button>
+        <button type="button" class="btn" id="tabStation" data-i18n="history.tabStation">Ελέγχοι Σταθμών</button>
+      </div>
+
+      <section id="sectionWorkOrder">
+        <div class="btn-row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span class="subtle" id="workOrderCount"></span>
+          <button type="button" class="btn btn-outline btn-danger" id="clearWorkOrder" data-i18n="history.clearAll">Καθαρισμός Όλων</button>
+        </div>
+        <div id="workOrderList"></div>
+      </section>
+
+      <section id="sectionStation" style="display:none;">
+        <div class="btn-row" style="justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span class="subtle" id="stationCount"></span>
+          <button type="button" class="btn btn-outline btn-danger" id="clearStation" data-i18n="history.clearAll">Καθαρισμός Όλων</button>
+        </div>
+        <div id="stationList"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer no-print" data-i18n="app.footer">© 2025 Theocharis Anastopoulos — FieldTrak</footer>
+
+  <dialog id="viewModal">
+    <div class="dialog-head">
+      <span id="viewModalTitle" data-i18n="history.view">Προβολή</span>
+      <button type="button" class="btn btn-outline" id="closeModal">✕</button>
+    </div>
+    <div class="dialog-body">
+      <pre id="viewModalBody" style="white-space:pre-wrap; word-wrap:break-word; margin:0; font-size:13px; max-height:60vh; overflow:auto;"></pre>
+    </div>
+  </dialog>
+
+  <script src="i18n.js"></script>
+  <script>
+    (function(){ try { if (navigator && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {} })();
+    document.addEventListener('DOMContentLoaded', function() { FieldTrakI18n.initLangControl(); });
+  </script>
+  <script>
+    (function() {
+      var T = function(k) { return FieldTrakI18n.t(k); };
+      var WORK_ORDER_KEY = 'fieldtrak_workorder_history_v1';
+      var STATION_KEY = 'fieldtrak_station_history_v1';
+
+      function loadList(key) {
+        try {
+          return JSON.parse(localStorage.getItem(key) || '[]');
+        } catch (e) { return []; }
+      }
+      function saveList(key, arr) {
+        try { localStorage.setItem(key, JSON.stringify(arr)); } catch (e) {}
+      }
+      function formatTime(iso) {
+        if (!iso) return '—';
+        var d = new Date(iso);
+        var locale = FieldTrakI18n.getLang() === 'el' ? 'el-GR' : FieldTrakI18n.getLang() === 'it' ? 'it-IT' : 'en-GB';
+        return isNaN(d.getTime()) ? iso : d.toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' });
+      }
+
+      var viewModal = document.getElementById('viewModal');
+      var viewModalTitle = document.getElementById('viewModalTitle');
+      var viewModalBody = document.getElementById('viewModalBody');
+
+      function openView(title, bodyText) {
+        viewModalTitle.textContent = title;
+        viewModalBody.textContent = bodyText || '';
+        if (typeof viewModal.showModal === 'function') viewModal.showModal();
+        else viewModal.setAttribute('open', 'open');
+      }
+      function closeView() {
+        if (typeof viewModal.close === 'function') viewModal.close();
+        else viewModal.removeAttribute('open');
+      }
+      document.getElementById('closeModal').addEventListener('click', closeView);
+      viewModal.addEventListener('cancel', closeView);
+
+      function showToast(message) {
+        var container = document.getElementById('toastContainer');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'toastContainer';
+          container.className = 'toast-container no-print';
+          document.body.appendChild(container);
+        }
+        var toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        container.appendChild(toast);
+        requestAnimationFrame(function() { toast.classList.add('show'); });
+        setTimeout(function() {
+          toast.classList.remove('show');
+          toast.classList.add('hide');
+          setTimeout(function() { toast.remove(); }, 280);
+        }, 2200);
+      }
+
+      function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function() { showToast(T('toast.copied')); }, function() { alert('Αντιγραφή απέτυχε'); });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed'; ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); showToast(T('toast.copied')); } catch (e) { alert('Αντιγραφή απέτυχε'); }
+          document.body.removeChild(ta);
+        }
+      }
+
+      function renderWorkOrder() {
+        var arr = loadList(WORK_ORDER_KEY).slice().sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
+        var el = document.getElementById('workOrderList');
+        document.getElementById('workOrderCount').textContent = arr.length + ' ' + T('history.entries');
+        el.innerHTML = '';
+        if (!arr.length) {
+          el.innerHTML = '<p class="subtle">' + T('history.emptyWorkOrder') + '</p>';
+          return;
+        }
+        arr.forEach(function(r) {
+          var item = document.createElement('div');
+          item.className = 'history-item';
+          item.innerHTML =
+            '<div class="meta">' + formatTime(r.timestamp) + ' — ' + (r.date || '—') + ' · ' + (r.city || '—') + ' · ' + (r.technician || '—') + '</div>' +
+            '<div class="btn-row">' +
+            '<button type="button" class="btn btn-outline" data-action="view">' + T('history.view') + '</button>' +
+            '<button type="button" class="btn btn-outline" data-action="copy">' + T('history.copy') + '</button>' +
+            '<button type="button" class="btn btn-danger" data-action="delete">' + T('history.delete') + '</button>' +
+            '</div>';
+          var viewBtn = item.querySelector('[data-action="view"]');
+          var copyBtn = item.querySelector('[data-action="copy"]');
+          var delBtn = item.querySelector('[data-action="delete"]');
+          viewBtn.addEventListener('click', function() { openView(T('history.viewTitleWorkOrder') + ' — ' + formatTime(r.timestamp), r.bodyText); });
+          copyBtn.addEventListener('click', function() { copyToClipboard(r.bodyText || ''); });
+          delBtn.addEventListener('click', function() {
+            var list = loadList(WORK_ORDER_KEY).filter(function(x) { return x.id !== r.id; });
+            saveList(WORK_ORDER_KEY, list);
+            renderWorkOrder();
+            showToast(T('toast.deleted'));
+          });
+          el.appendChild(item);
+        });
+      }
+
+      function renderStation() {
+        var arr = loadList(STATION_KEY).slice().sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
+        var el = document.getElementById('stationList');
+        document.getElementById('stationCount').textContent = arr.length + ' ' + T('history.entries');
+        el.innerHTML = '';
+        if (!arr.length) {
+          el.innerHTML = '<p class="subtle">' + T('history.emptyStation') + '</p>';
+          return;
+        }
+        arr.forEach(function(r) {
+          var item = document.createElement('div');
+          item.className = 'history-item';
+          item.innerHTML =
+            '<div class="meta">' + formatTime(r.timestamp) + ' — ' + (r.date || '—') + ' · ' + (r.city || '—') + ' · ' + (r.technician || '—') + '</div>' +
+            '<div class="btn-row">' +
+            '<button type="button" class="btn btn-outline" data-action="view">' + T('history.view') + '</button>' +
+            '<button type="button" class="btn btn-outline" data-action="copy">' + T('history.copy') + '</button>' +
+            '<button type="button" class="btn btn-danger" data-action="delete">' + T('history.delete') + '</button>' +
+            '</div>';
+          var viewBtn = item.querySelector('[data-action="view"]');
+          var copyBtn = item.querySelector('[data-action="copy"]');
+          var delBtn = item.querySelector('[data-action="delete"]');
+          viewBtn.addEventListener('click', function() { openView(T('history.viewTitleStation') + ' — ' + formatTime(r.timestamp), r.bodyText); });
+          copyBtn.addEventListener('click', function() { copyToClipboard(r.bodyText || ''); });
+          delBtn.addEventListener('click', function() {
+            var list = loadList(STATION_KEY).filter(function(x) { return x.id !== r.id; });
+            saveList(STATION_KEY, list);
+            renderStation();
+            showToast(T('toast.deleted'));
+          });
+          el.appendChild(item);
+        });
+      }
+
+      document.getElementById('tabWorkOrder').addEventListener('click', function() {
+        document.getElementById('sectionWorkOrder').style.display = 'block';
+        document.getElementById('sectionStation').style.display = 'none';
+        document.getElementById('tabWorkOrder').classList.add('active');
+        document.getElementById('tabStation').classList.remove('active');
+      });
+      document.getElementById('tabStation').addEventListener('click', function() {
+        document.getElementById('sectionWorkOrder').style.display = 'none';
+        document.getElementById('sectionStation').style.display = 'block';
+        document.getElementById('tabStation').classList.add('active');
+        document.getElementById('tabWorkOrder').classList.remove('active');
+      });
+
+      document.getElementById('clearWorkOrder').addEventListener('click', function() {
+        if (!confirm(T('history.confirmClearWorkOrder'))) return;
+        saveList(WORK_ORDER_KEY, []);
+        renderWorkOrder();
+        showToast(T('toast.cleared'));
+      });
+      document.getElementById('clearStation').addEventListener('click', function() {
+        if (!confirm(T('history.confirmClearStation'))) return;
+        saveList(STATION_KEY, []);
+        renderStation();
+        showToast(T('toast.cleared'));
+      });
+
+      window.onLanguageApplied = function() { renderWorkOrder(); renderStation(); };
+      renderWorkOrder();
+      renderStation();
+    })();
+  </script>
+</body>
+</html>

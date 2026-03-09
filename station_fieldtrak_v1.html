@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <title>FieldTrak — Έλεγχος Εγκαταστάσεων</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Κοινό navbar -->
+  <header class="app-bar no-print">
+    <div class="app-bar-inner">
+      <div class="brand">
+        <img src="fieldtrak1.png" alt="FieldTrak" onerror="this.onerror=null;this.src='/mnt/data/icon.png';">
+        <span>FieldTrak</span>
+      </div>
+      <nav class="app-nav">
+        <a href="index.html">Αρχική</a>
+        <a href="work_order.html">Εντολή Εργασίας</a>
+        <a class="active" href="station.html">Έλεγχος Εγκαταστάσεων</a>
+        <a href="calendar.html">Ημερολόγιο</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title">Έλεγχος Εγκαταστάσεων</h1>
+
+    <section class="card">
+      
+<div style="margin:10px 0">
+  <button type="button" onclick="saveDraft(false)">💾 Αποθήκευση Πρόχειρου</button>
+  <button type="button" onclick="saveDraft(true)">✔ Οριστικοποίηση Επίσκεψης</button>
+  <span id="saveStatus" style="margin-left:10px;color:green"></span>
+</div>
+<ul id="logsList" style="margin-top:10px"></ul>
+<form id="stationForm">
+        <div class="form-grid">
+          <div class="form-col">
+            <label>Ημερομηνία:</label>
+            <input type="date" id="date" />
+            <label>Πόλη:</label>
+            <input type="text" id="city" />
+            <label>Όνομα Σταθμού:</label>
+            <input type="text" id="station" />
+            <label>Μετρητής Αερίου (m³):</label>
+            <input type="number" id="gasReading" step="any" />
+            <label>Μετρητής ΔΕΗ (kWh):</label>
+            <input type="number" id="electricReading" step="any" />
+            <label>Ονοματεπώνυμο Τεχνικού:</label>
+            <input type="text" id="technician" />
+          </div>
+
+          <div class="form-col">
+            <label>Ανωμαλίες:</label>
+            <select id="anomaly">
+              <option value="Καμία">Καμία</option>
+              <option value="Διαρροή Αερίου">Διαρροή Αερίου</option>
+              <option value="Πτώση Πίεσης">Πτώση Πίεσης</option>
+              <option value="Αισθητήρας Πίεσης">Αισθητήρας Πίεσης</option>
+              <option value="Αισθητήρας Θερμοκρασίας">Αισθητήρας Θερμοκρασίας</option>
+              <option value="Βλάβη Καυστήρα">Βλάβη Καυστήρα</option>
+              <option value="Βλάβη Κυκλοφορητή">Βλάβη Κυκλοφορητή</option>
+              <option value="Βουλωμένο φίλτρο">Βουλωμένο φίλτρο</option>
+              <option value="Barrier/Steffel/PR">Barrier/Steffel/PR</option>
+              <option value="Σταθμός T/R-Δυναμικό Προστασίας">Σταθμός T/R-Δυναμικό Προστασίας</option>
+              <option value="Σταθμός T/R-Ρεύμα(mAh)">Σταθμός T/R-Ρεύμα(mAh)</option>
+              <option value="Σταθμός T/R-Τάση">Σταθμός T/R-Τάση</option>
+              <option value="Scada (Απώλεια Επικοινωνίας)">Scada (Απώλεια Επικοινωνίας)</option>
+              <option value="Άλλο">Άλλο</option>
+            </select>
+
+            <label>Σημειώσεις:</label>
+            <textarea id="notes" rows="8" placeholder="Πληκτρολογήστε παρατηρήσεις..."></textarea>
+            <label>Προτεινόμενες Ενέργειες:</label>
+            <textarea id="actions" rows="3" placeholder="Π.χ. Αντικατάσταση φίλτρου, καθαρισμός, επιδιόρθωση..."></textarea>
+
+            <label>Ενδεικτική φωτογραφία:</label>
+            <input type="file" id="photo" accept="image/*" />
+            <div id="photoPreview" class="photo-preview"></div>
+          </div>
+        </div>
+      </form>
+
+      <div class="btn-row mt-16 no-print">
+        <button type="button" class="btn" onclick="exportPDF()">Εκτύπωση / PDF</button>
+        <button type="button" class="btn btn-primary" onclick="sendEmail()">Αποστολή Email</button>
+      </div>
+    </section>
+
+    <!-- Print view (only on print) -->
+    <section id="printView" class="card print-block" style="display:none">
+      <h2 class="page-title" style="font-size:18px">Καταγραφή Σταθμού</h2>
+      <p><strong>Ημερομηνία:</strong> <span id="p_date"></span></p>
+      <p><strong>Πόλη:</strong> <span id="p_city"></span></p>
+      <p><strong>Σταθμός:</strong> <span id="p_station"></span></p>
+      <p><strong>Μετρητής Αερίου:</strong> <span id="p_gas"></span> m³</p>
+      <p><strong>Μετρητής ΔΕΗ:</strong> <span id="p_elec"></span> kWh</p>
+      <p><strong>Τεχνικός:</strong> <span id="p_tech"></span></p>
+      <p><strong>Ανωμαλία:</strong> <span id="p_anomaly"></span></p>
+      <p><strong>Σημειώσεις:</strong><br><span id="p_notes"></span></p>
+      <p><strong>Προτεινόμενες Ενέργειες:</strong><br><span id="p_actions"></span></p>
+      <h3>Ενδεικτική φωτογραφία</h3>
+      <img id="p_photo" alt="Ενδεικτική φωτογραφία" style="max-width:320px; max-height:360px; object-fit:contain; border:1px solid var(--grid); border-radius:10px; padding:6px;">
+    </section>
+  </main>
+
+  <footer class="footer no-print">© 2025 Theocharis Anastopoulos — FieldTrak</footer>
+
+  <script>
+    let photoDataUrl = null;
+
+    document.getElementById('photo').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const dataUrl = await fileToDataURL(file);
+      photoDataUrl = dataUrl;
+      document.getElementById('photoPreview').innerHTML = `<img src="${dataUrl}" alt="preview">`;
+    });
+
+    function fileToDataURL(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function sendEmail() {
+      const date = document.getElementById('date').value;
+      const city = document.getElementById('city').value.trim();
+      const station = document.getElementById('station').value.trim();
+      const gas = document.getElementById('gasReading').value;
+      const elec = document.getElementById('electricReading').value;
+      const tech = document.getElementById('technician').value.trim();
+      const anomaly = document.getElementById('anomaly').value;
+      const notes = document.getElementById('notes').value.trim();
+      const actions = document.getElementById('actions').value.trim();
+      const timestamp = new Date().toLocaleString();
+
+      const subject = `Καταγραφή Σταθμού - ${station || "—"}`;
+      const body =
+        `Ημερομηνία: ${date}%0D%0A` +
+        `Πόλη: ${city}%0D%0A` +
+        `Σταθμός: ${station}%0D%0A` +
+        `Μετρητής Αερίου: ${gas} m³%0D%0A` +
+        `Μετρητής ΔΕΗ: ${elec} kWh%0D%0A` +
+        `Ονοματεπώνυμο Τεχνικού: ${tech}%0D%0A` +
+        `Ανωμαλία: ${anomaly}%0D%0A` +
+        `Σημειώσεις:%0D%0A${encodeURIComponent(notes)}%0D%0A` +
+        `Προτεινόμενες Ενέργειες:%0D%0A${encodeURIComponent(actions)}%0D%0A` +
+        `Χρονική Σήμανση: ${timestamp}%0D%0A` +
+        `%0D%0A(Η ενδεικτική φωτογραφία περιλαμβάνεται μόνο στο PDF/εκτύπωση)`;
+
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${body}`;
+    }
+
+    function exportPDF() {
+      document.getElementById("p_date").textContent = document.getElementById("date").value || '—';
+      document.getElementById("p_city").textContent = document.getElementById("city").value || '—';
+      document.getElementById("p_station").textContent = document.getElementById("station").value || '—';
+      document.getElementById("p_gas").textContent = document.getElementById("gasReading").value || '—';
+      document.getElementById("p_elec").textContent = document.getElementById("electricReading").value || '—';
+      document.getElementById("p_tech").textContent = document.getElementById("technician").value || '—';
+      document.getElementById("p_anomaly").textContent = document.getElementById("anomaly").value || 'Καμία';
+      document.getElementById("p_notes").textContent = document.getElementById("notes").value || '';
+      document.getElementById("p_actions").textContent = document.getElementById("actions").value || '';
+
+      const pPhoto = document.getElementById('p_photo');
+      if (photoDataUrl) {
+        pPhoto.src = photoDataUrl;
+        pPhoto.style.display = 'block';
+      } else {
+        pPhoto.style.display = 'none';
+      }
+
+      window.print();
+    }
+  </script>
+
+<script>
+/* === FieldTrak Smart Logs v1 (ανά επίσκεψη) === */
+const STORAGE_KEY = "fieldtrak.station.logs.v1";
+
+function getLogs() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+}
+
+function saveLogs(logs) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+}
+
+function collectFormData() {
+  const form = document.querySelector("form");
+  const data = {};
+  new FormData(form).forEach((v, k) => data[k] = v);
+  data.id = data.id || crypto.randomUUID();
+  data.savedAt = new Date().toISOString();
+  return data;
+}
+
+function validateRequired() {
+  const required = ["date", "city", "station", "technician"];
+  let ok = true;
+  required.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) {
+      el.style.borderColor = "red";
+      ok = false;
+    } else if (el) {
+      el.style.borderColor = "";
+    }
+  });
+  if (!ok) alert("Συμπλήρωσε όλα τα υποχρεωτικά πεδία.");
+  return ok;
+}
+
+function saveDraft(finalize=false) {
+  if (finalize && !validateRequired()) return;
+
+  const logs = getLogs();
+  const data = collectFormData();
+  data.status = finalize ? "final" : "draft";
+
+  const idx = logs.findIndex(l => l.id === data.id);
+  if (idx >= 0) logs[idx] = data;
+  else logs.push(data);
+
+  saveLogs(logs);
+  document.getElementById("saveStatus").innerText =
+    "✅ Αποθηκεύτηκε " + new Date().toLocaleTimeString();
+  renderLogs();
+}
+
+function renderLogs() {
+  const list = document.getElementById("logsList");
+  if (!list) return;
+  const logs = getLogs();
+  list.innerHTML = "";
+  logs.forEach(l => {
+    const li = document.createElement("li");
+    li.textContent = `${l.date || ""} – ${l.city || ""} – ${l.station || ""} (${l.status})`;
+    list.appendChild(li);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", renderLogs);
+</script>
+
+</body>
+</html>

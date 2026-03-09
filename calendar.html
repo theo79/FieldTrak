@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <title>FieldTrak — Ημερολόγιο</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0A66FF" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Κοινό navbar -->
+  <header class="app-bar no-print">
+    <div class="app-bar-inner">
+      <div class="brand">
+        <img src="fieldtrak1.png" alt="FieldTrak" onerror="this.onerror=null;this.src='/mnt/data/icon.png';">
+        <span>FieldTrak</span>
+      </div>
+      <nav class="app-nav">
+        <a href="index.html" data-i18n="nav.home">Αρχική</a>
+        <a href="work_order.html" data-i18n="nav.workorder">Εντολή Εργασίας</a>
+        <a href="station.html" data-i18n="nav.station">Έλεγχος Εγκαταστάσεων</a>
+        <a class="active" href="calendar.html" data-i18n="nav.calendar">Ημερολόγιο</a>
+        <a href="history.html" data-i18n="nav.history">Ιστορικό</a>
+      </nav>
+      <div class="lang-segment" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="el">EL</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+        <button type="button" class="lang-btn" data-lang="it">IT</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title" data-i18n="calendar.title">Ημερολόγιο</h1>
+
+    <section class="card">
+      <div class="btn-row no-print" style="justify-content:space-between; margin-bottom:10px;">
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="prevBtn" data-i18n="calendar.prev">‹ Προηγ.</button>
+          <button class="btn btn-secondary" id="todayBtn" data-i18n="calendar.today">Σήμερα</button>
+          <button class="btn btn-secondary" id="nextBtn" data-i18n="calendar.next">Επόμ. ›</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="printBtn" data-i18n="calendar.print">Εκτύπωση / PDF</button>
+          <button class="btn btn-primary" id="emailBtn" data-i18n="calendar.email">Αποστολή Email</button>
+        </div>
+      </div>
+
+      <h2 id="monthLabel" class="subtle" style="margin:0 0 8px 2px;"></h2>
+
+      <div class="calendar">
+        <div class="weekdays">
+          <div data-i18n="calendar.weekdayMon">Δευ</div><div data-i18n="calendar.weekdayTue">Τρ</div><div data-i18n="calendar.weekdayWed">Τετ</div><div data-i18n="calendar.weekdayThu">Πεμ</div><div data-i18n="calendar.weekdayFri">Παρ</div><div data-i18n="calendar.weekdaySat">Σαβ</div><div data-i18n="calendar.weekdaySun">Κυρ</div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </section>
+
+    <!-- PRINT-ONLY notes -->
+    <section id="printNotes" class="card print-block" style="display:none">
+      <h2 style="margin:0 0 8px 0;" data-i18n="calendar.printNotesTitle">Σημειώσεις Ημερολογίου</h2>
+      <div class="subtle" id="printRange" style="margin-bottom:6px;"></div>
+      <ol id="notesList" style="padding-left:18px;"></ol>
+    </section>
+  </main>
+
+  <footer class="footer no-print" data-i18n="app.footer">© 2025 Theocharis Anastopoulos — FieldTrak</footer>
+
+  <script src="i18n.js"></script>
+  <script>
+    (function(){ try { if (navigator && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {} })();
+    document.addEventListener('DOMContentLoaded', function() { FieldTrakI18n.initLangControl(); });
+  </script>
+  <dialog id="noteDialog">
+    <div class="dialog-head">
+      <span id="dialogTitle" data-i18n="calendar.dialogTitle">Σημείωση</span>
+      <button class="btn btn-outline" id="closeDialog">✕</button>
+    </div>
+    <div class="dialog-body">
+      <textarea id="noteText" data-i18n-placeholder="calendar.notePlaceholder" placeholder="Γράψτε σημείωση για την ημέρα..."></textarea>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn btn-danger" id="deleteNote" data-i18n="calendar.delete">Διαγραφή</button>
+      <div class="btn-row">
+        <button class="btn" id="cancelNote" data-i18n="calendar.cancel">Άκυρο</button>
+        <button class="btn btn-primary" id="saveNote" data-i18n="calendar.save">Αποθήκευση</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    function getMonthNames() { var lang = FieldTrakI18n.getLang(); return FieldTrakI18n.LANG[lang] && FieldTrakI18n.LANG[lang].calendarMonths ? FieldTrakI18n.LANG[lang].calendarMonths : FieldTrakI18n.LANG.el.calendarMonths; }
+    // ---- Utilities ----
+    const grid = document.getElementById('grid');
+    const monthLabel = document.getElementById('monthLabel');
+    const noteDialog = document.getElementById('noteDialog');
+    const noteText = document.getElementById('noteText');
+    const dialogTitle = document.getElementById('dialogTitle');
+    const printRange = document.getElementById('printRange');
+    const notesList = document.getElementById('notesList');
+
+    let view = (() => { const now = new Date(); return { y: now.getFullYear(), m: now.getMonth() }; })();
+    const LS_KEY = 'fieldtrak_calendar_notes_v1';
+    const loadNotes = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; } };
+    const saveNotes = (m) => localStorage.setItem(LS_KEY, JSON.stringify(m || {}));
+    const fmtDateKey = (dt) => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+
+    function isSameDate(a,b){return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();}
+
+    // ---- Render Calendar ----
+    function render() {
+      grid.innerHTML = '';
+      const first = new Date(view.y, view.m, 1);
+      const startWeekday = (first.getDay() + 6) % 7; // 0=Mon
+      const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
+      const totalCells = 42;
+      const notes = loadNotes();
+      const today = new Date();
+
+      monthLabel.textContent = getMonthNames()[view.m] + ' ' + view.y;
+
+      for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const dayNum = i - startWeekday + 1;
+        let dateObj;
+
+        if (dayNum < 1) {
+          const prevMonthLastDay = new Date(view.y, view.m, 0).getDate();
+          dateObj = new Date(view.y, view.m - 1, prevMonthLastDay + dayNum);
+          cell.classList.add('outside');
+        } else if (dayNum > daysInMonth) {
+          dateObj = new Date(view.y, view.m + 1, dayNum - daysInMonth);
+          cell.classList.add('outside');
+        } else {
+          dateObj = new Date(view.y, view.m, dayNum);
+        }
+
+        const key = fmtDateKey(dateObj);
+        const hasNote = (notes[key] && notes[key].trim().length > 0);
+
+        const badge = document.createElement('div');
+        badge.className = 'date-badge';
+        badge.textContent = dateObj.getDate();
+        cell.appendChild(badge);
+
+        if (isSameDate(dateObj, today)) cell.classList.add('today');
+
+        if (hasNote) {
+          const dot = document.createElement('div');
+          dot.className = 'note-dot';
+          cell.appendChild(dot);
+          cell.title = notes[key].split('\n')[0];
+        }
+
+        cell.addEventListener('click', () => openNote(dateObj));
+        grid.appendChild(cell);
+      }
+    }
+
+    // ---- Note Modal ----
+    let currentDateKey = null;
+    function openNote(dateObj) {
+      currentDateKey = fmtDateKey(dateObj);
+      const notes = loadNotes();
+      noteText.value = notes[currentDateKey] || '';
+      dialogTitle.textContent = FieldTrakI18n.t('calendar.dialogTitle') + ' — ' + currentDateKey;
+      if (typeof noteDialog.showModal === 'function') noteDialog.showModal();
+      else {
+        const val = prompt(`Σημείωση για ${currentDateKey}:`, noteText.value);
+        if (val !== null) { notes[currentDateKey] = val.trim(); saveNotes(notes); render(); }
+      }
+    }
+
+    document.getElementById('saveNote').addEventListener('click', () => {
+      const notes = loadNotes();
+      notes[currentDateKey] = (noteText.value || '').trim();
+      saveNotes(notes);
+      noteDialog.close();
+      render();
+    });
+    document.getElementById('deleteNote').addEventListener('click', () => {
+      const notes = loadNotes(); delete notes[currentDateKey]; saveNotes(notes);
+      noteDialog.close(); render();
+    });
+    document.getElementById('cancelNote').addEventListener('click', () => noteDialog.close());
+    document.getElementById('closeDialog').addEventListener('click', () => noteDialog.close());
+
+    // ---- Navigation ----
+    document.getElementById('prevBtn').addEventListener('click', () => { if (view.m===0){view.m=11;view.y--;} else view.m--; render(); });
+    document.getElementById('nextBtn').addEventListener('click', () => { if (view.m===11){view.m=0;view.y++;} else view.m++; render(); });
+    document.getElementById('todayBtn').addEventListener('click', () => { const n=new Date(); view.y=n.getFullYear(); view.m=n.getMonth(); render(); });
+
+    // ---- Printable Notes ----
+    function buildPrintableNotes() {
+      notesList.innerHTML = '';
+      const notes = loadNotes();
+      const end = new Date(view.y, view.m + 1, 0);
+      printRange.textContent = getMonthNames()[view.m] + ' ' + view.y;
+
+      for (let day = 1; day <= end.getDate(); day++) {
+        const dt = new Date(view.y, view.m, day);
+        const key = fmtDateKey(dt);
+        const val = (notes[key] || '').trim();
+        if (!val) continue;
+
+        const li = document.createElement('li');
+        li.innerHTML = `<span style="font-weight:700">${key}:</span> ${val}`;
+        notesList.appendChild(li);
+      }
+
+      if (!notesList.children.length) {
+        const li = document.createElement('li');
+        li.textContent = FieldTrakI18n.t('calendar.emptyNotes');
+        notesList.appendChild(li);
+      }
+    }
+
+    document.getElementById('printBtn').addEventListener('click', () => {
+      buildPrintableNotes();
+      setTimeout(() => window.print(), 50);
+    });
+
+    document.getElementById('emailBtn').addEventListener('click', () => {
+      const notes = loadNotes();
+      const end = new Date(view.y, view.m + 1, 0);
+      const out = [];
+      for (let d = 1; d <= end.getDate(); d++) {
+        const key = fmtDateKey(new Date(view.y, view.m, d));
+        if (notes[key]) out.push(`${key}\n${notes[key]}\n`);
+      }
+      const subject = FieldTrakI18n.t('calendar.emailSubject') + ' — ' + getMonthNames()[view.m] + ' ' + view.y;
+      const body = out.length ? out.join('\n') : FieldTrakI18n.t('calendar.emailEmpty');
+      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailto;
+    });
+
+    window.onLanguageApplied = function() { render(); };
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <title>FieldTrak — Έλεγχος Εγκαταστάσεων</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0A66FF" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Κοινό navbar -->
+  <header class="app-bar no-print">
+    <div class="app-bar-inner">
+      <div class="brand">
+        <img src="fieldtrak1.png" alt="FieldTrak" onerror="this.onerror=null;this.src='/mnt/data/icon.png';">
+        <span>FieldTrak</span>
+      </div>
+      <nav class="app-nav">
+        <a href="index.html" data-i18n="nav.home">Αρχική</a>
+        <a href="work_order.html" data-i18n="nav.workorder">Εντολή Εργασίας</a>
+        <a class="active" href="station.html" data-i18n="nav.station">Έλεγχος Εγκαταστάσεων</a>
+        <a href="calendar.html" data-i18n="nav.calendar">Ημερολόγιο</a>
+        <a href="history.html" data-i18n="nav.history">Ιστορικό</a>
+      </nav>
+      <div class="lang-segment" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="el">EL</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+        <button type="button" class="lang-btn" data-lang="it">IT</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title" data-i18n="station.title">Έλεγχος Εγκαταστάσεων</h1>
+
+    <section class="card">
+      <form id="stationForm">
+        <div class="form-grid">
+          <div class="form-col">
+            <label data-i18n="station.date">Ημερομηνία:</label>
+            <input type="date" id="date" />
+            <label data-i18n="station.city">Πόλη:</label>
+            <input type="text" id="city" autocomplete="address-level2" />
+            <label data-i18n="station.station">Όνομα Σταθμού:</label>
+            <input type="text" id="station" autocomplete="organization" />
+            <label data-i18n="station.gasReading">Μετρητής Αερίου (m³):</label>
+            <input type="number" id="gasReading" step="any" inputmode="decimal" />
+            <label data-i18n="station.electricReading">Μετρητής ΔΕΗ (kWh):</label>
+            <input type="number" id="electricReading" step="any" inputmode="decimal" />
+            <label data-i18n="station.technician">Ονοματεπώνυμο Τεχνικού:</label>
+            <input type="text" id="technician" autocomplete="name" />
+          </div>
+
+          <div class="form-col">
+            <label data-i18n="station.anomaly">Ανωμαλίες:</label>
+            <select id="anomaly">
+              <option value="Καμία" data-i18n="station.anomalyNone">Καμία</option>
+              <option value="Διαρροή Αερίου" data-i18n="station.anomalyGasLeak">Διαρροή Αερίου</option>
+              <option value="Πτώση Πίεσης" data-i18n="station.anomalyPressureDrop">Πτώση Πίεσης</option>
+              <option value="Αισθητήρας Πίεσης" data-i18n="station.anomalyPressureSensor">Αισθητήρας Πίεσης</option>
+              <option value="Αισθητήρας Θερμοκρασίας" data-i18n="station.anomalyTempSensor">Αισθητήρας Θερμοκρασίας</option>
+              <option value="Βλάβη Καυστήρα" data-i18n="station.anomalyBurner">Βλάβη Καυστήρα</option>
+              <option value="Βλάβη Κυκλοφορητή" data-i18n="station.anomalyFan">Βλάβη Κυκλοφορητή</option>
+              <option value="Βουλωμένο φίλτρο" data-i18n="station.anomalyFilter">Βουλωμένο φίλτρο</option>
+              <option value="Barrier/Steffel/PR" data-i18n="station.anomalyBarrier">Barrier/Steffel/PR</option>
+              <option value="Σταθμός T/R-Δυναμικό Προστασίας" data-i18n="station.anomalyTR1">Σταθμός T/R-Δυναμικό Προστασίας</option>
+              <option value="Σταθμός T/R-Ρεύμα(mAh)" data-i18n="station.anomalyTR2">Σταθμός T/R-Ρεύμα(mAh)</option>
+              <option value="Σταθμός T/R-Τάση" data-i18n="station.anomalyTR3">Σταθμός T/R-Τάση</option>
+              <option value="Scada (Απώλεια Επικοινωνίας)" data-i18n="station.anomalyScada">Scada (Απώλεια Επικοινωνίας)</option>
+              <option value="Άλλο" data-i18n="station.anomalyOther">Άλλο</option>
+            </select>
+
+            <label data-i18n="station.notes">Σημειώσεις:</label>
+            <textarea id="notes" rows="8" data-i18n-placeholder="station.notesPlaceholder" placeholder="Πληκτρολογήστε παρατηρήσεις..."></textarea>
+            <label data-i18n="station.actions">Προτεινόμενες Ενέργειες:</label>
+            <textarea id="actions" rows="3" data-i18n-placeholder="station.actionsPlaceholder" placeholder="Π.χ. Αντικατάσταση φίλτρου, καθαρισμός, επιδιόρθωση..."></textarea>
+
+            <label data-i18n="station.photo">Ενδεικτική φωτογραφία:</label>
+            <input type="file" id="photo" accept="image/*" />
+            <div id="photoPreview" class="photo-preview"></div>
+          </div>
+        </div>
+      </form>
+
+      <div class="btn-row mt-16 no-print">
+        <button type="button" class="btn" onclick="exportPDF()" data-i18n="station.print">Εκτύπωση / PDF</button>
+        <button type="button" class="btn btn-primary" onclick="sendEmail()" data-i18n="station.email">Αποστολή Email</button>
+        <button type="button" class="btn btn-outline" id="clearDraftBtn" data-i18n="station.clearDraft">Καθαρισμός Πρόχειρου</button>
+      </div>
+    </section>
+
+    <!-- Print view (only on print) -->
+    <section id="printView" class="card print-block" style="display:none">
+      <h2 class="page-title" style="font-size:18px" data-i18n="station.printTitle">Καταγραφή Σταθμού</h2>
+      <p><strong data-i18n="station.date">Ημερομηνία:</strong> <span id="p_date"></span></p>
+      <p><strong data-i18n="station.city">Πόλη:</strong> <span id="p_city"></span></p>
+      <p><strong data-i18n="station.station">Σταθμός:</strong> <span id="p_station"></span></p>
+      <p><strong data-i18n="station.gasLabel">Μετρητής Αερίου:</strong> <span id="p_gas"></span> m³</p>
+      <p><strong data-i18n="station.elecLabel">Μετρητής ΔΕΗ:</strong> <span id="p_elec"></span> kWh</p>
+      <p><strong data-i18n="station.techLabel">Τεχνικός:</strong> <span id="p_tech"></span></p>
+      <p><strong data-i18n="station.anomaly">Ανωμαλία:</strong> <span id="p_anomaly"></span></p>
+      <p><strong data-i18n="station.notes">Σημειώσεις:</strong><br><span id="p_notes"></span></p>
+      <p><strong data-i18n="station.actions">Προτεινόμενες Ενέργειες:</strong><br><span id="p_actions"></span></p>
+      <h3 data-i18n="station.photo">Ενδεικτική φωτογραφία</h3>
+      <img id="p_photo" alt="" style="max-width:320px; max-height:360px; object-fit:contain; border:1px solid var(--grid); border-radius:10px; padding:6px;">
+    </section>
+  </main>
+
+  <footer class="footer no-print" data-i18n="app.footer">© 2025 Theocharis Anastopoulos — FieldTrak</footer>
+
+  <script src="i18n.js"></script>
+  <script>
+    (function(){ try { if (navigator && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {} })();
+    document.addEventListener('DOMContentLoaded', function() { FieldTrakI18n.initLangControl(); });
+  </script>
+  <script>
+    let photoDataUrl = null;
+
+    document.getElementById('photo').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const dataUrl = await fileToDataURL(file);
+      photoDataUrl = dataUrl;
+      document.getElementById('photoPreview').innerHTML = '<img src="' + dataUrl + '" alt="preview">';
+      if (window.scheduleDraftSave) window.scheduleDraftSave();
+    });
+
+    function fileToDataURL(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function getStationBodyText() {
+      var T = FieldTrakI18n.t;
+      var date = document.getElementById('date').value;
+      var city = document.getElementById('city').value.trim();
+      var station = document.getElementById('station').value.trim();
+      var gas = document.getElementById('gasReading').value;
+      var elec = document.getElementById('electricReading').value;
+      var tech = document.getElementById('technician').value.trim();
+      var anomalyVal = document.getElementById('anomaly').value;
+      var anomalyKey = FieldTrakI18n.anomalyValueToKey[anomalyVal];
+      var anomaly = anomalyKey ? T('station.' + anomalyKey) : anomalyVal;
+      var notes = document.getElementById('notes').value.trim();
+      var actions = document.getElementById('actions').value.trim();
+      var timestamp = new Date().toLocaleString();
+      return T('station.date') + ': ' + date + '\n' +
+        T('station.city') + ': ' + city + '\n' +
+        T('station.station') + ': ' + station + '\n' +
+        T('station.gasLabel') + ': ' + gas + ' m³\n' +
+        T('station.elecLabel') + ': ' + elec + ' kWh\n' +
+        T('station.technician') + ': ' + tech + '\n' +
+        T('station.anomaly') + ': ' + anomaly + '\n' +
+        T('station.notes') + ':\n' + notes + '\n' +
+        T('station.actions') + ':\n' + actions + '\n' +
+        T('workorder.timestamp') + ': ' + timestamp + '\n\n' +
+        T('station.photoNote');
+    }
+
+    function saveStationHistory() {
+      var date = document.getElementById('date').value;
+      var city = document.getElementById('city').value.trim();
+      var tech = document.getElementById('technician').value.trim();
+      var bodyText = getStationBodyText();
+      var record = { id: Date.now(), timestamp: new Date().toISOString(), date: date, city: city, technician: tech, bodyText: bodyText };
+      var key = 'fieldtrak_station_history_v1';
+      var arr = [];
+      try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+      arr.push(record);
+      if (arr.length > 50) arr = arr.slice(-50);
+      try { localStorage.setItem(key, JSON.stringify(arr)); } catch (e) {}
+    }
+
+    function sendEmail() {
+      const date = document.getElementById('date').value;
+      const city = document.getElementById('city').value.trim();
+      const station = document.getElementById('station').value.trim();
+      const gas = document.getElementById('gasReading').value;
+      const elec = document.getElementById('electricReading').value;
+      const tech = document.getElementById('technician').value.trim();
+      const anomaly = document.getElementById('anomaly').value;
+      const notes = document.getElementById('notes').value.trim();
+      const actions = document.getElementById('actions').value.trim();
+      const timestamp = new Date().toLocaleString();
+
+      var T = FieldTrakI18n.t;
+      var anomalyKey = FieldTrakI18n.anomalyValueToKey[anomaly];
+      var anomalyLabel = anomalyKey ? T('station.' + anomalyKey) : anomaly;
+      const subject = T('station.subjectPrefix') + ' - ' + (station || '—');
+      const body =
+        T('station.date') + ': ' + date + '%0D%0A' +
+        T('station.city') + ': ' + city + '%0D%0A' +
+        T('station.station') + ': ' + station + '%0D%0A' +
+        T('station.gasLabel') + ': ' + gas + ' m³%0D%0A' +
+        T('station.elecLabel') + ': ' + elec + ' kWh%0D%0A' +
+        T('station.technician') + ': ' + tech + '%0D%0A' +
+        T('station.anomaly') + ': ' + anomalyLabel + '%0D%0A' +
+        T('station.notes') + ':%0D%0A' + encodeURIComponent(notes) + '%0D%0A' +
+        T('station.actions') + ':%0D%0A' + encodeURIComponent(actions) + '%0D%0A' +
+        T('workorder.timestamp') + ': ' + timestamp + '%0D%0A' +
+        '%0D%0A' + encodeURIComponent(T('station.photoNote'));
+
+      saveStationHistory();
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${body}`;
+    }
+
+    function exportPDF() {
+      saveStationHistory();
+      document.getElementById('p_date').textContent = document.getElementById('date').value || '—';
+      document.getElementById("p_city").textContent = document.getElementById("city").value || '—';
+      document.getElementById("p_station").textContent = document.getElementById("station").value || '—';
+      document.getElementById("p_gas").textContent = document.getElementById("gasReading").value || '—';
+      document.getElementById("p_elec").textContent = document.getElementById("electricReading").value || '—';
+      document.getElementById("p_tech").textContent = document.getElementById("technician").value || '—';
+      var selAnomaly = document.getElementById('anomaly').value;
+      var aKey = FieldTrakI18n.anomalyValueToKey[selAnomaly];
+      document.getElementById('p_anomaly').textContent = aKey ? FieldTrakI18n.t('station.' + aKey) : (selAnomaly || FieldTrakI18n.t('station.anomalyNone'));
+      document.getElementById("p_notes").textContent = document.getElementById("notes").value || '';
+      document.getElementById("p_actions").textContent = document.getElementById("actions").value || '';
+
+      const pPhoto = document.getElementById('p_photo');
+      if (photoDataUrl) {
+        pPhoto.src = photoDataUrl;
+        pPhoto.style.display = 'block';
+      } else {
+        pPhoto.style.display = 'none';
+      }
+
+      window.print();
+    }
+
+    (function draftAutosave() {
+      var DRAFT_KEY = 'fieldtrak_station_draft_v1';
+      var FIELDS = ['date', 'city', 'station', 'gasReading', 'electricReading', 'technician', 'anomaly', 'notes', 'actions'];
+      var debounceTimer = null;
+      var DEBOUNCE_MS = 300;
+
+      function getDraft() {
+        try {
+          return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+        } catch (e) { return null; }
+      }
+      function saveDraft() {
+        var o = {};
+        FIELDS.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) o[id] = el.value;
+        });
+        if (photoDataUrl) o.photoDataUrl = photoDataUrl;
+        try { localStorage.setItem(DRAFT_KEY, JSON.stringify(o)); } catch (e) {}
+      }
+      function scheduleSave() {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () { saveDraft(); debounceTimer = null; }, DEBOUNCE_MS);
+      }
+      function restoreDraft() {
+        var draft = getDraft();
+        if (!draft || typeof draft !== 'object') return;
+        FIELDS.forEach(function (id) {
+          if (draft[id] != null) {
+            var el = document.getElementById(id);
+            if (el) el.value = draft[id];
+          }
+        });
+        if (draft.photoDataUrl && typeof draft.photoDataUrl === 'string') {
+          photoDataUrl = draft.photoDataUrl;
+          document.getElementById('photoPreview').innerHTML = '<img src="' + draft.photoDataUrl + '" alt="preview">';
+        }
+      }
+      function clearDraft() {
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        FIELDS.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        photoDataUrl = null;
+        document.getElementById('photoPreview').innerHTML = '';
+        var photoInput = document.getElementById('photo');
+        if (photoInput) photoInput.value = '';
+      }
+
+      restoreDraft();
+      FIELDS.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', scheduleSave);
+          el.addEventListener('change', scheduleSave);
+        }
+      });
+      var clearBtn = document.getElementById('clearDraftBtn');
+      if (clearBtn) clearBtn.addEventListener('click', clearDraft);
+      window.scheduleDraftSave = scheduleSave;
+    })();
+  </script>
+</body>
+</html>

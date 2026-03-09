@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <title>FieldTrak</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0A66FF" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preload" href="fieldtrak1.png" as="image" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-bar no-print">
+    <div class="app-bar-inner">
+      <div class="brand">
+        <img src="fieldtrak1.png" alt="FieldTrak" onerror="this.onerror=null;this.src='/mnt/data/icon.png';">
+        <span>FieldTrak</span>
+      </div>
+      <nav class="app-nav">
+        <a class="active" href="index.html" data-i18n="nav.home">Αρχική</a>
+        <a href="work_order.html" data-i18n="nav.workorder">Εντολή Εργασίας</a>
+        <a href="station.html" data-i18n="nav.station">Έλεγχος Εγκαταστάσεων</a>
+        <a href="calendar.html" data-i18n="nav.calendar">Ημερολόγιο</a>
+        <a href="history.html" data-i18n="nav.history">Ιστορικό</a>
+      </nav>
+      <div class="lang-segment" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="el">EL</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+        <button type="button" class="lang-btn" data-lang="it">IT</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title" data-i18n="home.welcome">Καλώς ήρθες</h1>
+
+    <section class="tiles mt-16">
+      <article class="tile">
+        <div>
+          <h3 data-i18n="home.tileWorkOrderTitle">Εξαγωγή Εντολής Εργασίας</h3>
+          <p data-i18n="home.tileWorkOrderDesc">Συγκέντρωση εργασιών ημέρας, εκτύπωση ή email.</p>
+        </div>
+        <a class="btn btn-primary" href="work_order.html" data-i18n="home.open">Άνοιγμα</a>
+      </article>
+
+      <article class="tile">
+        <div>
+          <h3 data-i18n="home.tileStationTitle">Έλεγχος Εγκαταστάσεων</h3>
+          <p data-i18n="home.tileStationDesc">Καταγραφή μετρήσεων και ανωμαλιών με φωτογραφία.</p>
+        </div>
+        <a class="btn btn-primary" href="station.html" data-i18n="home.open">Άνοιγμα</a>
+      </article>
+
+      <article class="tile">
+        <div>
+          <h3 data-i18n="home.tileCalendarTitle">Ημερολόγιο</h3>
+          <p data-i18n="home.tileCalendarDesc">Σημειώσεις ανά ημέρα, εξαγωγή σε PDF/Email.</p>
+        </div>
+        <a class="btn btn-primary" href="calendar.html" data-i18n="home.open">Άνοιγμα</a>
+      </article>
+
+      <article class="tile">
+        <div>
+          <h3 data-i18n="home.tileHistoryTitle">Ιστορικό</h3>
+          <p data-i18n="home.tileHistoryDesc">Εντολές εργασίας και ελέγχοι σταθμών, προβολή και αντιγραφή.</p>
+        </div>
+        <a class="btn btn-primary" href="history.html" data-i18n="home.open">Άνοιγμα</a>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer no-print" data-i18n="app.footer">© 2025 Theocharis Anastopoulos — FieldTrak</footer>
+  <script src="i18n.js"></script>
+  <script>
+    (function(){ try { if (navigator && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {} })();
+    document.addEventListener('DOMContentLoaded', function() { FieldTrakI18n.initLangControl(); });
+  </script>
+</body>
+</html>

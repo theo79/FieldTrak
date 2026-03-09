@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <title>FieldTrak — Εντολή Εργασίας</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0A66FF" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Κοινό navbar -->
+  <header class="app-bar no-print">
+    <div class="app-bar-inner">
+      <div class="brand">
+        <img src="fieldtrak1.png" alt="FieldTrak" onerror="this.onerror=null;this.src='/mnt/data/icon.png';">
+        <span>FieldTrak</span>
+      </div>
+      <nav class="app-nav">
+        <a href="index.html" data-i18n="nav.home">Αρχική</a>
+        <a class="active" href="work_order.html" data-i18n="nav.workorder">Εντολή Εργασίας</a>
+        <a href="station.html" data-i18n="nav.station">Έλεγχος Εγκαταστάσεων</a>
+        <a href="calendar.html" data-i18n="nav.calendar">Ημερολόγιο</a>
+        <a href="history.html" data-i18n="nav.history">Ιστορικό</a>
+      </nav>
+      <div class="lang-segment" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="el">EL</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
+        <button type="button" class="lang-btn" data-lang="it">IT</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title" data-i18n="workorder.title">Εντολή Εργασίας</h1>
+
+    <section class="card">
+      <div class="form-grid">
+        <div class="form-col">
+          <label data-i18n="workorder.date">Ημερομηνία:</label>
+          <input type="date" id="date" />
+
+          <label data-i18n="workorder.city">Πόλη Εργασίας:</label>
+          <input type="text" id="city" autocomplete="address-level2" />
+
+          <label data-i18n="workorder.plate">Αρ. Πινακίδας Αυτοκινήτου:</label>
+          <input type="text" id="plate" autocomplete="off" />
+
+          <label data-i18n="workorder.startTime">Ώρα Έναρξης:</label>
+          <input type="time" id="startTime" />
+
+          <label data-i18n="workorder.endTime">Ώρα Λήξης:</label>
+          <input type="time" id="endTime" />
+
+          <label data-i18n="workorder.technician">Ονοματεπώνυμο Τεχνικού:</label>
+          <input type="text" id="technician" autocomplete="name" />
+        </div>
+
+        <div class="form-col">
+          <label data-i18n="workorder.tasks">Εργασίες που πραγματοποιήθηκαν:</label>
+          <textarea id="tasks" data-i18n-placeholder="workorder.tasksPlaceholder" placeholder="• Καθαρισμός φίλτρου&#10;• Αντικατάσταση αισθητήρα&#10;• Έλεγχος βανών..."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row mt-16 no-print">
+        <button type="button" class="btn" onclick="doPrint()" data-i18n="workorder.print">Εκτύπωση / PDF</button>
+        <button type="button" class="btn btn-primary" onclick="sendEmail()" data-i18n="workorder.email">Αποστολή Email</button>
+        <button type="button" class="btn btn-outline" id="clearDraftBtn" data-i18n="workorder.clearDraft">Καθαρισμός Πρόχειρου</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer no-print" data-i18n="app.footer">© 2025 Theocharis Anastopoulos — FieldTrak</footer>
+
+  <script src="i18n.js"></script>
+  <script>
+    (function(){ try { if (navigator && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {} })();
+    document.addEventListener('DOMContentLoaded', function() { FieldTrakI18n.initLangControl(); });
+  </script>
+  <script>
+    function saveWorkOrderHistory() {
+      var date = document.getElementById('date').value;
+      var city = document.getElementById('city').value.trim();
+      var plate = document.getElementById('plate').value.trim();
+      var start = document.getElementById('startTime').value;
+      var end = document.getElementById('endTime').value;
+      var tech = document.getElementById('technician').value.trim();
+      var tasks = document.getElementById('tasks').value.trim();
+      var timestamp = new Date().toLocaleString();
+      var T = FieldTrakI18n.t;
+      var bodyText =
+        T('workorder.date') + ': ' + date + '\n' +
+        T('workorder.city') + ': ' + city + '\n' +
+        T('workorder.plate') + ': ' + plate + '\n' +
+        T('workorder.startTime') + ': ' + start + '\n' +
+        T('workorder.endTime') + ': ' + end + '\n' +
+        T('workorder.technician') + ': ' + tech + '\n\n' +
+        T('workorder.tasks') + ':\n' + tasks + '\n\n' +
+        T('workorder.timestamp') + ': ' + timestamp;
+      var record = { id: Date.now(), timestamp: new Date().toISOString(), date: date, city: city, technician: tech, bodyText: bodyText };
+      var key = 'fieldtrak_workorder_history_v1';
+      var arr = [];
+      try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+      arr.push(record);
+      if (arr.length > 50) arr = arr.slice(-50);
+      try { localStorage.setItem(key, JSON.stringify(arr)); } catch (e) {}
+    }
+
+    function doPrint() {
+      saveWorkOrderHistory();
+      window.print();
+    }
+
+    function sendEmail() {
+      const date = document.getElementById('date').value;
+      const city = document.getElementById('city').value.trim();
+      const plate = document.getElementById('plate').value.trim();
+      const start = document.getElementById('startTime').value;
+      const end = document.getElementById('endTime').value;
+      const tech = document.getElementById('technician').value.trim();
+      const tasks = document.getElementById('tasks').value.trim();
+      const timestamp = new Date().toLocaleString();
+
+      var T = FieldTrakI18n.t;
+      const subject = FieldTrakI18n.t('workorder.subjectPrefix') + ' - ' + (date || '—');
+      const bodyRaw =
+        FieldTrakI18n.t('workorder.date') + ': ' + date + '\n' +
+        FieldTrakI18n.t('workorder.city') + ': ' + city + '\n' +
+        FieldTrakI18n.t('workorder.plate') + ': ' + plate + '\n' +
+        FieldTrakI18n.t('workorder.startTime') + ': ' + start + '\n' +
+        FieldTrakI18n.t('workorder.endTime') + ': ' + end + '\n' +
+        FieldTrakI18n.t('workorder.technician') + ': ' + tech + '\n\n' +
+        FieldTrakI18n.t('workorder.tasks') + ':\n' + tasks + '\n\n' +
+        FieldTrakI18n.t('workorder.timestamp') + ': ' + timestamp;
+
+      saveWorkOrderHistory();
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyRaw)}`;
+    }
+
+    (function draftAutosave() {
+      var DRAFT_KEY = 'fieldtrak_workorder_draft_v1';
+      var FIELDS = ['date', 'city', 'plate', 'startTime', 'endTime', 'technician', 'tasks'];
+      var debounceTimer = null;
+      var DEBOUNCE_MS = 300;
+
+      function getDraft() {
+        try {
+          return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+        } catch (e) { return null; }
+      }
+      function saveDraft() {
+        var o = {};
+        FIELDS.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) o[id] = el.value;
+        });
+        try { localStorage.setItem(DRAFT_KEY, JSON.stringify(o)); } catch (e) {}
+      }
+      function scheduleSave() {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () { saveDraft(); debounceTimer = null; }, DEBOUNCE_MS);
+      }
+      function restoreDraft() {
+        var draft = getDraft();
+        if (!draft || typeof draft !== 'object') return;
+        FIELDS.forEach(function (id) {
+          if (draft[id] != null) {
+            var el = document.getElementById(id);
+            if (el) el.value = draft[id];
+          }
+        });
+      }
+      function clearDraft() {
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        FIELDS.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      }
+
+      restoreDraft();
+      FIELDS.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', scheduleSave);
+          el.addEventListener('change', scheduleSave);
+        }
+      });
+      var clearBtn = document.getElementById('clearDraftBtn');
+      if (clearBtn) clearBtn.addEventListener('click', clearDraft);
+    })();
+  </script>
+</body>
+</html>
