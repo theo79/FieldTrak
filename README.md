@@ -122,8 +122,8 @@ Steps:
 5. Set folder to `/root`
 6. Save
 
-Your app will be available at:
-https://theo79.github.io/fieldtrak
+App will be available at:
+https://theo79.github.io/FieldTrak/
 
 ---
 
