@@ -1,3 +1,12 @@
+<p align="center">
+  <img src="fieldtrak1.png" alt="FieldTrak Logo" width="140">
+</p>
+
+<h1 align="center">FieldTrak</h1>
+
+<p align="center">
+Lightweight field logging tool for technicians
+</p>
 # FieldTrak
 
 **FieldTrak** is a lightweight browser-based tool designed to help field technicians quickly log work orders, station inspections, and daily notes directly from a phone, tablet, or laptop.
